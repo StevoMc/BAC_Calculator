@@ -31,8 +31,8 @@ cache = FileSystemCache(
 )
 
 # Configure Flask-Session to use CacheLib
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = False
+app.config["SESSION_TYPE"] = "filesystem"
+app.config["SESSION_PERMANENT"] = False
 
 Session(app)
 
@@ -44,7 +44,7 @@ ETHANOL_DENSITY = 0.789  # g/mL
 
 # Drink data
 DRINKS = [
-    Drink(name="Bier", volume=1000, unit="ml", alcohol=6),
+    Drink(name="Bier", volume=1.0, unit="L", alcohol=6),
     Drink(name="Bier", volume=0.5, alcohol=5),
     Drink(name="Bier", volume=0.33, alcohol=5),
     Drink(name="Rotwein", volume=0.2, alcohol=13),
