@@ -1,4 +1,3 @@
-import flask
 import pytest
 
 from main import app

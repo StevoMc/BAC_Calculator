@@ -276,7 +276,7 @@ def calculate():
 
 @app.route("/reset")
 def reset():
-    # session.clear()
+    session.clear()
     session["user_drinks"] = []
     session["custom_drinks"] = []
     session["history"] = []
@@ -289,4 +289,4 @@ def health_check():
     return "OK", 200
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)
