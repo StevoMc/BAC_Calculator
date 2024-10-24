@@ -52,8 +52,21 @@ class Drink:
             raise ValueError("Drink name must start with an uppercase letter")
 
     def volume_in_liters(self) -> float:
-        """Returns the volume of the drink in liters."""
-        return calculate_volume_in_liters(self.volume, self.unit)
+        """Converts and returns the volume of the drink in liters."""
+        result = calculate_volume_in_liters(self.volume, self.unit)
+
+        if result < 0.0:
+            raise ValueError("Volume in liters cannot be negative")
+
+        # Convert the volume and update the unit based on the original unit.
+        if self.unit == "ml" and result > 1.0:
+            self.volume = round(self.volume / 1000, 2)
+            self.unit = "L"
+        elif self.unit == "cl" and result > 1.0:
+            self.volume = round(self.volume / 100, 2)
+            self.unit = "L"
+
+        return result
 
     def alcohol_content(self) -> float:
         """Calculates the alcohol content in liters."""
@@ -77,3 +90,6 @@ class Drink:
             and self.alcohol == other.alcohol
             and self.volume == other.volume
         )
+
+    def __hash__(self):
+        return hash((self.name, self.volume, self.alcohol))

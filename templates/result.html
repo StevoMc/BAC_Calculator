@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Sobering Time Result</title>
+		<title>Ergebnis</title>
 		<link
 			rel="stylesheet"
 			href="{{ url_for('static', filename='css/styles.css') }}"
@@ -11,97 +11,121 @@
 		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 	</head>
 	<body>
-		<main>
-			{% if error %}
-			<div class="error-message">
-				<p>{{ error }}</p>
-			</div>
-			{% else %}
-			<div class="results">
-				<h2>
-					Berechnete BAK: <span class="highlight">{{ bac }} Promille</span>
-				</h2>
-				<p>
-					Zeit, um nüchtern zu werden:
-					<span class="highlight">{{ time }} Stunden</span>
-				</p>
-				<hr />
-				<h3>Getrunkene Getränke:</h3>
-				<div class="drink-list-container">
-					{% for drink, amount in drinks.items() %}
-					<p>{{ amount }} x {{ drink }}</p>
-					{% endfor %}
+		<div class="container">
+			<header>
+				<h1>BAK Ergebnis</h1>
+			</header>
+			<main class="main-container">
+				{% if error %}
+				<div class="error-message">
+					<p>{{ error }}</p>
 				</div>
-				<hr />
-				<h3>Visualization:</h3>
-				<canvas id="soberingTimeChart" width="400" height="200"></canvas>
-			</div>
-			{% endif %}
-			<button
-				class="drink-button"
-				onclick="window.location.href=`{{ url_for('index') }}`;"
-			>
-				Zurück
-			</button>
-		</main>
+				<button
+					style="display: block; margin: 20px auto"
+					class="drink-button"
+					onclick="window.location.href=`{{ url_for('index') }}`;"
+				>
+					Zurück
+				</button>
+				{% else %}
+				<div class="result">
+					<h2>
+						Berechnete BAK: <span class="highlight">{{ bac }} Promille</span>
+					</h2>
+					<p>
+						Zeit, um nüchtern zu werden:
+						<span class="highlight">{{ time }} Stunden</span>
+					</p>
 
-		<script>
-			// Get BAC and time data from server-side
-			const initialBac = parseFloat("{{ bac }}");
-			const soberingTime = parseFloat("{{ time }}");
+					<h3>Visualization:</h3>
+					<div id="chart-container">
+						<canvas id="soberingTimeChart"></canvas>
+					</div>
 
-			// Create time labels (in hours) and linear BAC decrease data
-			const timeLabels = [];
-			const bacData = [];
-			const decayRatePerHour = initialBac / soberingTime;
+					<button
+						style="
+							display: block;
+							margin: 20px auto;
+							max-width: var(--small-screen);
+						"
+						class="drink-button"
+						onclick="window.location.href=`{{ url_for('index') }}`;"
+					>
+						Zurück
+					</button>
 
-			for (let t = 0; t <= soberingTime; t += 0.1) {
-				// More granular time steps for smoother line
-				timeLabels.push(t.toFixed(1) + " Stunden");
-				bacData.push((initialBac - decayRatePerHour * t).toFixed(2));
-			}
+					<h3>Getrunkene Getränke:</h3>
+					<div class="drink-list-container">
+						{% for drink, amount in drinks.items() %}
+						<p>{{ amount }} x {{ drink }}</p>
+						{% endfor %}
+					</div>
+				</div>
 
-			// Chart.js configuration for continuous linear decrease (line chart)
-			const ctx = document.getElementById("soberingTimeChart").getContext("2d");
-			const soberingTimeChart = new Chart(ctx, {
-				type: "line",
-				data: {
-					labels: timeLabels,
-					datasets: [
-						{
-							label: "BAC (Promille) vs. Zeit (Stunden)",
-							data: bacData,
-							borderColor: "rgba(75, 192, 192, 1)",
-							backgroundColor: "rgba(75, 192, 192, 0.2)",
-							fill: true,
-							borderWidth: 2,
-							tension: 0, // Set tension to 0 for a straight line
-						},
-					],
-				},
-				options: {
-					scales: {
-						y: {
-							beginAtZero: true,
-							title: {
-								display: true,
-								text: "BAK (Promille)",
+				{% endif %}
+			</main>
+
+			<script>
+				// Get BAC and time data from server-side
+				const initialBac = parseFloat("{{ bac }}");
+				const soberingTime = parseFloat("{{ time }}");
+
+				// Create time labels (in hours) and linear BAC decrease data
+				const timeLabels = [];
+				const bacData = [];
+				const decayRatePerHour = initialBac / soberingTime;
+
+				for (let t = 0; t <= soberingTime; t += 0.1) {
+					timeLabels.push(t.toFixed(1));
+					bacData.push((initialBac - decayRatePerHour * t).toFixed(2));
+				}
+
+				// Chart.js configuration
+				const ctx = document
+					.getElementById("soberingTimeChart")
+					.getContext("2d");
+				const soberingTimeChart = new Chart(ctx, {
+					type: "line",
+					data: {
+						labels: timeLabels,
+						datasets: [
+							{
+								label: "BAC (Promille) vs. Zeit (Stunden)",
+								data: bacData,
+								borderColor: "rgba(75, 192, 192, 1)",
+								backgroundColor: "rgba(75, 192, 192, 0.2)",
+								fill: true,
+								borderWidth: 2,
+								tension: 0,
+							},
+						],
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						scales: {
+							y: {
+								beginAtZero: true,
+								title: {
+									display: true,
+									text: "BAK (Promille)",
+								},
+							},
+							x: {
+								title: {
+									display: true,
+									text: "Zeit (Stunden)",
+								},
 							},
 						},
-						x: {
-							title: {
-								display: true,
-								text: "Zeit (Stunden)",
+						elements: {
+							point: {
+								radius: 1,
 							},
 						},
 					},
-					elements: {
-						point: {
-							radius: 0, // Remove points from the graph for a clean line
-						},
-					},
-				},
-			});
-		</script>
+				});
+			</script>
+		</div>
 	</body>
 </html>

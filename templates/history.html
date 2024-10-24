@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Drink History</title>
+		<title>Getränkeverlauf</title>
 		<link
 			rel="stylesheet"
 			href="{{ url_for('static', filename='css/styles.css') }}"
@@ -12,7 +12,7 @@
 	<body>
 		<div class="container">
 			<header>
-				<h1>Drink History</h1>
+				<h1>Getränkeverlauf</h1>
 			</header>
 			<main>
 				<div class="history-container">
@@ -31,13 +31,13 @@
 									<span class="highlight">{{ entry.drink }}</span>
 									<span class="entry-time">{{ entry.time }}</span>
 								</div>
-								<button type="submit" class="remove-button">Remove</button>
+								<button type="submit" class="remove-button">Entfernen</button>
 							</form>
 						</div>
 						{% endfor %}
 					</dl>
 					{% else %}
-					<p>No drinks in history yet.</p>
+					<p>Noch keine Getränke hinzufügt.</p>
 					{% endif %}
 
 					<button
@@ -50,7 +50,7 @@
 						class="reset-button"
 						onclick="window.location.href=`{{ url_for('reset_history') }}`;"
 					>
-						Reset History
+						Verlauf löschen
 					</button>
 				</div>
 			</main>

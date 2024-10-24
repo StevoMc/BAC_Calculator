@@ -17,30 +17,29 @@ app = Flask(__name__)
 
 # Configuration
 class Config:
-    SECRET_KEY = os.urandom(24)
+    SECRET_KEY = os.environ.get("SECRET_KEY", os.urandom(24))
     SESSION_PERMANENT = False
     SESSION_COOKIE_NAME = "session"
+    SESSION_TYPE = "filesystem"
 
 
 app.config.from_object(Config)
 
+# Initialize cache
 cache = FileSystemCache(
-    cache_dir="/tmp/flask_session",
-    threshold=100,
-    default_timeout=600,
+    cache_dir="./flask_session",
+    threshold=250,
+    default_timeout=60 * 60 * 24 * 7,
 )
 
-# Configure Flask-Session to use CacheLib
-app.config["SESSION_TYPE"] = "filesystem"
-app.config["SESSION_PERMANENT"] = False
-
+# Initialize Flask-Session
 Session(app)
 
 # Constants
-ALCOHOL_METABOLISM_RATE = 0.15  # Promille per hour
+ALCOHOL_METABOLISM_RATE = 0.15
 REDUCTION_FACTOR = {"male": 0.7, "female": 0.6}
 ALCOHOL_ABSORPTION_RATE = 0.85
-ETHANOL_DENSITY = 0.789  # g/mL
+ETHANOL_DENSITY = 0.789
 
 # Drink data
 DRINKS = [
@@ -61,8 +60,7 @@ def calculate_age_factor(age: int) -> float:
 
 
 def calculate_reduction_factor(gender: Literal["male", "female"], age: int) -> float:
-    age_factor = calculate_age_factor(age)
-    return REDUCTION_FACTOR.get(gender, 1) * age_factor
+    return REDUCTION_FACTOR.get(gender, 1) * calculate_age_factor(age)
 
 
 def calculate_bac(
@@ -74,10 +72,9 @@ def calculate_bac(
 
 
 def calculate_adjusted_metabolism_rate(age: int, weight: float) -> float:
-    age_adjustment = 1 - ((age - 20) * 0.001)
-    metabolism_rate = ALCOHOL_METABOLISM_RATE * age_adjustment
-    metabolism_rate = max(0.10, metabolism_rate)  # Lower bound
-    weight_factor = weight / 70  # Baseline weight
+    metabolism_rate = ALCOHOL_METABOLISM_RATE * calculate_age_factor(age)
+    metabolism_rate = max(0.10, metabolism_rate)
+    weight_factor = weight / 70
     return metabolism_rate * weight_factor
 
 
@@ -87,31 +84,31 @@ def calculate_time_to_sober(bac: float, weight: float, age: int) -> float:
 
 
 def calculate_total_alcohol_in_liters(drinks: List[Drink]) -> float:
-    result = round(sum(drink.alcohol_content() for drink in drinks), 2)
-    return result
+    return round(sum(drink.alcohol_content() for drink in drinks), 2)
 
 
 def get_combined_drinks() -> List[Drink]:
     user_drinks = [Drink(**drink) for drink in session.get("user_drinks", [])]
     custom_drinks = [Drink(**drink) for drink in session.get("custom_drinks", [])]
     combined_drinks = user_drinks + custom_drinks
-
-    # sort the drinks by highest alcohol content
     combined_drinks.sort(key=lambda x: x.volume_in_liters(), reverse=True)
-
     return combined_drinks
 
 
+# Routes
 @app.route("/")
 def index():
     selected_drinks = get_combined_drinks()
     drink_summary = {
-        f"{drink.__str__()}": selected_drinks.count(drink) for drink in selected_drinks
+        f"{drink}": selected_drinks.count(drink) for drink in selected_drinks
     }
+
+    all_unique_drinks = set(selected_drinks + DRINKS)
+
     context = {
-        "drinks": DRINKS,
+        "drinks": all_unique_drinks,
         "drink_summary": drink_summary,
-        "selected_drinks": get_combined_drinks(),
+        "selected_drinks": selected_drinks,
         "user": session.get("user"),
         "current_year": datetime.now().year,
     }
@@ -120,11 +117,7 @@ def index():
 
 @app.route("/history")
 def history():
-    drink_history = session.get("history", [])
-    context = {
-        "drink_history": drink_history,
-    }
-    return render_template("history.html", **context)
+    return render_template("history.html", drink_history=session.get("history", []))
 
 
 @app.route("/history/reset")
@@ -142,11 +135,9 @@ def remove_history_entry():
     drink = request.form.get("drink")
     time = request.form.get("time")
     history = session.get("history", [])
-    for entry in history:
-        if entry["drink"] == drink and entry["time"] == time:
-            history.remove(entry)
-            break
-    session["history"] = history
+    session["history"] = [
+        entry for entry in history if entry["drink"] != drink or entry["time"] != time
+    ]
     session.modified = True
     flash("History entry removed.")
     return redirect(url_for("history"))
@@ -155,7 +146,9 @@ def remove_history_entry():
 @app.route("/add_drink", methods=["POST"])
 def add_drink():
     drink = request.form.get("drink")
-    selected_drink = next((d for d in DRINKS if d.__str__() == drink), None)
+    all_unique_drinks = set(get_combined_drinks() + DRINKS)
+
+    selected_drink = next((d for d in all_unique_drinks if str(d) == drink), None)
 
     if not selected_drink:
         flash("Drink not found.")
@@ -165,7 +158,7 @@ def add_drink():
     user_drinks.append(selected_drink.__dict__)
 
     log = {
-        "drink": selected_drink.__str__(),
+        "drink": str(selected_drink),
         "time": format_datetime(datetime.now(), locale="de_DE"),
         "timestamp": datetime.now().timestamp(),
     }
@@ -180,7 +173,7 @@ def add_drink():
 @app.route("/remove_drink", methods=["POST"])
 def remove_drink():
     drink = request.form.get("drink")
-    selected_drink = next((d for d in DRINKS if d.__str__() == drink), None)
+    selected_drink = next((d for d in DRINKS if str(d) == drink), None)
 
     if not selected_drink:
         flash("Drink not found.")
@@ -189,14 +182,10 @@ def remove_drink():
     user_drinks = session.get("user_drinks", [])
     user_drinks.remove(selected_drink.__dict__)
 
-    # Update history
     history = session.get("history", [])
-    for entry in history:
-        if entry["drink"] == selected_drink.__str__():
-            history.remove(entry)
-            break
-    session["history"] = history
-
+    session["history"] = [
+        entry for entry in history if entry["drink"] != str(selected_drink)
+    ]
     session.modified = True
     flash(f"{selected_drink.name} removed.")
     return redirect(url_for("index") + "#drinks")
@@ -213,6 +202,16 @@ def add_custom_drink():
         )
         custom_drinks = session.setdefault("custom_drinks", [])
         custom_drinks.append(custom_drink.__dict__)
+
+        log = {
+            "drink": str(custom_drink),
+            "time": format_datetime(datetime.now(), locale="de_DE"),
+            "timestamp": datetime.now().timestamp(),
+        }
+        history = session.get("history", [])
+        history.append(log)
+        session["history"] = history
+
         session.modified = True
         flash(f"Custom drink {custom_drink.name} added.")
     except ValueError:
@@ -237,17 +236,13 @@ def calculate():
         session.modified = True
     except (ValueError, KeyError):
         return render_template(
-            "result.html",
-            error="Ungültige Eingaben. Bitte überprüfen Sie die eingegebenen Informationen.",
-            drinks=[],
+            "result.html", error="Invalid input. Please check your details.", drinks=[]
         )
 
     selected_drinks = get_combined_drinks()
 
     if not selected_drinks:
-        return render_template(
-            "result.html", error="Keine Getränke ausgewählt.", drinks=[]
-        )
+        return render_template("result.html", error="No drinks selected.", drinks=[])
 
     try:
         total_alcohol = calculate_total_alcohol_in_liters(selected_drinks)
@@ -263,13 +258,11 @@ def calculate():
     except Exception as e:
         print(e)
         return render_template(
-            "result.html",
-            error="Fehler bei der Berechnung. Bitte versuchen Sie es erneut.",
-            drinks=[],
+            "result.html", error="Calculation error. Please try again.", drinks=[]
         )
 
     drink_summary = {
-        f"{drink}": selected_drinks.count(drink) for drink in selected_drinks
+        str(drink): selected_drinks.count(drink) for drink in selected_drinks
     }
 
     return render_template(
