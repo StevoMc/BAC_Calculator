@@ -1,7 +1,7 @@
 import flask
 import pytest
 
-from alcohol_calculator import app
+from main import app
 
 
 @pytest.fixture
