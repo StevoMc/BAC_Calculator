@@ -8,6 +8,7 @@
 			rel="stylesheet"
 			href="{{ url_for('static', filename='css/styles.css') }}"
 		/>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 	</head>
 	<body>
 		<main>
@@ -32,11 +33,75 @@
 					{% endfor %}
 				</div>
 				<hr />
+				<h3>Visualization:</h3>
+				<canvas id="soberingTimeChart" width="400" height="200"></canvas>
 			</div>
 			{% endif %}
-			<button class="drink-button" onclick="window.location.href='/';">
+			<button
+				class="drink-button"
+				onclick="window.location.href=`{{ url_for('index') }}`;"
+			>
 				Zurück
 			</button>
 		</main>
+
+		<script>
+			// Get BAC and time data from server-side
+			const initialBac = parseFloat("{{ bac }}");
+			const soberingTime = parseFloat("{{ time }}");
+
+			// Create time labels (in hours) and linear BAC decrease data
+			const timeLabels = [];
+			const bacData = [];
+			const decayRatePerHour = initialBac / soberingTime;
+
+			for (let t = 0; t <= soberingTime; t += 0.1) {
+				// More granular time steps for smoother line
+				timeLabels.push(t.toFixed(1) + " Stunden");
+				bacData.push((initialBac - decayRatePerHour * t).toFixed(2));
+			}
+
+			// Chart.js configuration for continuous linear decrease (line chart)
+			const ctx = document.getElementById("soberingTimeChart").getContext("2d");
+			const soberingTimeChart = new Chart(ctx, {
+				type: "line",
+				data: {
+					labels: timeLabels,
+					datasets: [
+						{
+							label: "BAC (Promille) vs. Zeit (Stunden)",
+							data: bacData,
+							borderColor: "rgba(75, 192, 192, 1)",
+							backgroundColor: "rgba(75, 192, 192, 0.2)",
+							fill: true,
+							borderWidth: 2,
+							tension: 0, // Set tension to 0 for a straight line
+						},
+					],
+				},
+				options: {
+					scales: {
+						y: {
+							beginAtZero: true,
+							title: {
+								display: true,
+								text: "BAK (Promille)",
+							},
+						},
+						x: {
+							title: {
+								display: true,
+								text: "Zeit (Stunden)",
+							},
+						},
+					},
+					elements: {
+						point: {
+							radius: 0, // Remove points from the graph for a clean line
+						},
+					},
+				},
+			});
+		</script>
 	</body>
 </html>

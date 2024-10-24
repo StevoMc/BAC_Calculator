@@ -32,7 +32,6 @@ body {
 	overflow: auto;
 	overflow-x: hidden;
 	background-color: var(--background-color);
-
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -208,7 +207,6 @@ button {
 	.drink-option {
 		width: 150px;
 	}
-	
 }
 
 .drink-option p:not(:first-child) {
@@ -221,6 +219,72 @@ button {
 
 .drink-option img {
 	color: rgb(0, 0, 0); /* All SVGs will be white */
-	filter: invert()
+	filter: invert();
 }
 
+.history-container {
+	flex: 1 1;
+	flex-grow: 1;
+	flex-shrink: 0;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	justify-content: stretch;
+}
+
+.history-list {
+	padding: 0;
+	margin: 0;
+}
+
+.history-entry {
+	display: flex;
+	flex-direction: row;
+	flex-grow: 1;
+	width: 100%;
+	justify-content: space-between; /* Align items at the start and end */
+	align-items: stretch; /* Center align items vertically */
+	margin-bottom: 10px; /* Space between entries */
+	padding: 10px;
+	border-bottom: 1px solid #ccc; /* Optional: Add a bottom border for separation */
+}
+
+.entry-form {
+	display: flex; /* Use flexbox for the form */
+	flex-direction: row; /* Align items horizontally */
+	align-items: center; /* Center align items vertically */
+	flex-grow: 1;
+}
+
+.details {
+	display: flex;
+	flex-direction: column; /* Align items vertically */
+	justify-content: center;
+	align-items: flex-start;
+	flex-grow: 1; /* Allow details to take available space */
+}
+
+.entry-time {
+	font-size: medium;
+	margin-right: 10px; /* Space between time and drink name */
+}
+
+.highlight {
+	font-weight: bold; /* Optional: Highlight the drink name */
+}
+
+.remove-button {
+	margin-left: auto; /* Push the button to the right */
+	width: 100px; /* Set a fixed width for the button */
+	background-color: #e74c3c; /* Red background */
+	color: white; /* White text */
+	border: none; /* Remove default border */
+	padding: 5px 10px; /* Padding for the button */
+	cursor: pointer; /* Pointer cursor on hover */
+	transition: background-color 0.3s; /* Smooth transition for hover */
+}
+
+.remove-button:hover {
+	background-color: #c0392b; /* Darker red on hover */
+}

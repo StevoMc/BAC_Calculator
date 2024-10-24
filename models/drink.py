@@ -55,6 +55,10 @@ class Drink:
         """Returns the volume of the drink in liters."""
         return calculate_volume_in_liters(self.volume, self.unit)
 
+    def alcohol_content(self) -> float:
+        """Calculates the alcohol content in liters."""
+        return round(self.volume_in_liters() * (self.alcohol / 100), 2)
+
     def __str__(self) -> str:
         """Provides a user-friendly string representation of the drink."""
         return f"{self.name} ({self.volume} {self.unit}, {self.alcohol}%)"

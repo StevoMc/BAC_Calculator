@@ -152,7 +152,10 @@
                     </div>
                 </div>
             </section>
-
+            <button
+						class="drink-button"
+						onclick="window.location.href=`{{ url_for('history') }}`;"
+					>Verlauf anzeigen</button>
             <form action="/reset" method="get" onsubmit="return confirmReset()">
                 <button class="reset-button" type="submit">Getränke zurücksetzen</button>
             </form>

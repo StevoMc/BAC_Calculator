@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Drink History</title>
+		<link
+			rel="stylesheet"
+			href="{{ url_for('static', filename='css/styles.css') }}"
+		/>
+	</head>
+	<body>
+		<div class="container">
+			<header>
+				<h1>Drink History</h1>
+			</header>
+			<main>
+				<div class="history-container">
+					{% if drink_history.__len__() > 0 %}
+					<dl class="history-list">
+						{% for entry in drink_history %}
+						<div class="history-entry">
+							<form
+								action="{{ url_for('remove_history_entry') }}"
+								method="POST"
+								class="entry-form"
+							>
+								<input type="hidden" name="drink" value="{{ entry.drink }}" />
+								<input type="hidden" name="time" value="{{ entry.time }}" />
+								<div class="details">
+									<span class="highlight">{{ entry.drink }}</span>
+									<span class="entry-time">{{ entry.time }}</span>
+								</div>
+								<button type="submit" class="remove-button">Remove</button>
+							</form>
+						</div>
+						{% endfor %}
+					</dl>
+					{% else %}
+					<p>No drinks in history yet.</p>
+					{% endif %}
+
+					<button
+						class="drink-button"
+						onclick="window.location.href=`{{ url_for('index') }}`;"
+					>
+						Zurück
+					</button>
+					<button
+						class="reset-button"
+						onclick="window.location.href=`{{ url_for('reset_history') }}`;"
+					>
+						Reset History
+					</button>
+				</div>
+			</main>
+		</div>
+	</body>
+</html>

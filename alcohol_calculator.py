@@ -4,30 +4,42 @@ import os
 from datetime import datetime
 from typing import List, Literal
 
-from flask import (Flask, flash, redirect, render_template, request, session,
-                   url_for)
+from babel.dates import format_datetime
+from cachelib.file import FileSystemCache
+from flask import Flask, flash, redirect, render_template, request, session, url_for
+
 from flask_session import Session
 from models.drink import Drink
 from models.user import User
-
-app = Flask(__name__)
 
 
 # Configuration
 class Config:
     SECRET_KEY = os.urandom(24)
     SESSION_TYPE = "filesystem"
+    SESSION_PERMANENT = False  # Set according to your needs
 
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# Set up the session with CacheLib
+app.config["SESSION_CACHE"] = FileSystemCache(
+    "/tmp/flask_session",
+    threshold=100,  # Maximum number of items to keep
+    default_timeout=600,  # Adjust timeout as needed
+)
+
+# Use Flask-Session with CacheLib
 Session(app)
 
+# Constants
 ALCOHOL_METABOLISM_RATE = 0.15  # Promille per hour
 REDUCTION_FACTOR = {"male": 0.7, "female": 0.6}
 ALCOHOL_ABSORPTION_RATE = 0.85
+ETHANOL_DENSITY = 0.789  # g/mL
 
+# Drink data
 DRINKS = [
     Drink(name="Bier", volume=1000, unit="ml", alcohol=6),
     Drink(name="Bier", volume=0.5, alcohol=5),
@@ -41,36 +53,45 @@ DRINKS = [
 
 
 # Helper functions
+def calculate_age_factor(age: int) -> float:
+    return 1 - ((age - 20) * 0.001) if age > 20 else 1
+
+
+def calculate_reduction_factor(gender: Literal["male", "female"], age: int) -> float:
+    age_factor = calculate_age_factor(age)
+    return REDUCTION_FACTOR.get(gender, 1) * age_factor
+
+
 def calculate_bac(
     weight: float, gender: Literal["male", "female"], age: int, total_alcohol: float
 ) -> float:
-    # Adjust the reduction factor based on age if necessary
-    age_factor = 1 - ((age - 20) * 0.001) if age > 20 else 1
-    reduction_factor = REDUCTION_FACTOR.get(gender, 1) * age_factor
-    absorbed_alcohol = total_alcohol * ALCOHOL_ABSORPTION_RATE
+    reduction_factor = calculate_reduction_factor(gender, age)
+    absorbed_alcohol = total_alcohol * 1000 * ALCOHOL_ABSORPTION_RATE
     return round(absorbed_alcohol / (weight * reduction_factor), 3)
 
 
-def calculate_time_to_sober(bac: float, weight: float, age: int) -> float:
-    # Adjust metabolism rate based on age and weight
-    adjusted_metabolism_rate = ALCOHOL_METABOLISM_RATE * (1 - ((age - 20) * 0.001))
-    adjusted_metabolism_rate = max(0.10, adjusted_metabolism_rate)  # Set a lower bound
+def calculate_adjusted_metabolism_rate(age: int, weight: float) -> float:
+    age_adjustment = 1 - ((age - 20) * 0.001)
+    metabolism_rate = ALCOHOL_METABOLISM_RATE * age_adjustment
+    metabolism_rate = max(0.10, metabolism_rate)  # Lower bound
+    weight_factor = weight / 70  # Baseline weight
+    return metabolism_rate * weight_factor
 
-    weight_factor = weight / 70  # Assume 70 kg as baseline
-    final_metabolism_rate = adjusted_metabolism_rate * weight_factor
+
+def calculate_time_to_sober(bac: float, weight: float, age: int) -> float:
+    final_metabolism_rate = calculate_adjusted_metabolism_rate(age, weight)
     return round(bac / final_metabolism_rate, 2)
 
 
-def calculate_total_alcohol(selected_drinks: List[Drink]) -> float:
-    return sum(
-        drink.volume_in_liters() * drink.alcohol * 0.789 for drink in selected_drinks
-    )
+def calculate_total_alcohol_in_liters(drinks: List[Drink]) -> float:
+    result = sum(drink.alcohol_content() for drink in drinks)
+    print(result)
+    return result
 
 
 def get_combined_drinks() -> List[Drink]:
     user_drinks = [Drink(**drink) for drink in session.get("user_drinks", [])]
     custom_drinks = [Drink(**drink) for drink in session.get("custom_drinks", [])]
-
     combined_drinks = user_drinks + custom_drinks
 
     # sort the drinks by highest alcohol content
@@ -95,6 +116,40 @@ def index():
     return render_template("index.html", **context)
 
 
+@app.route("/history")
+def history():
+    drink_history = session.get("history", [])
+    context = {
+        "drink_history": drink_history,
+    }
+    return render_template("history.html", **context)
+
+
+@app.route("/history/reset")
+def reset_history():
+    session["history"] = []
+    session["user_drinks"] = []
+    session["custom_drinks"] = []
+    session.modified = True
+    flash("History reset.")
+    return redirect(url_for("history"))
+
+
+@app.route("/history/remove", methods=["POST"])
+def remove_history_entry():
+    drink = request.form.get("drink")
+    time = request.form.get("time")
+    history = session.get("history", [])
+    for entry in history:
+        if entry["drink"] == drink and entry["time"] == time:
+            history.remove(entry)
+            break
+    session["history"] = history
+    session.modified = True
+    flash("History entry removed.")
+    return redirect(url_for("history"))
+
+
 @app.route("/add_drink", methods=["POST"])
 def add_drink():
     drink = request.form.get("drink")
@@ -106,9 +161,18 @@ def add_drink():
 
     user_drinks = session.setdefault("user_drinks", [])
     user_drinks.append(selected_drink.__dict__)
+
+    log = {
+        "drink": selected_drink.__str__(),
+        "time": format_datetime(datetime.now(), locale="de_DE"),
+        "timestamp": datetime.now().timestamp(),
+    }
+    history = session.get("history", [])
+    history.append(log)
+    session["history"] = history
     session.modified = True
     flash(f"{selected_drink.name} added.")
-    return redirect(url_for("index") + "#drinks")
+    return redirect(url_for("index"))
 
 
 @app.route("/remove_drink", methods=["POST"])
@@ -122,6 +186,15 @@ def remove_drink():
 
     user_drinks = session.get("user_drinks", [])
     user_drinks.remove(selected_drink.__dict__)
+
+    # Update history
+    history = session.get("history", [])
+    for entry in history:
+        if entry["drink"] == selected_drink.__str__():
+            history.remove(entry)
+            break
+    session["history"] = history
+
     session.modified = True
     flash(f"{selected_drink.name} removed.")
     return redirect(url_for("index") + "#drinks")
@@ -148,39 +221,34 @@ def add_custom_drink():
 @app.route("/calculate", methods=["POST"])
 def calculate():
     try:
-        # Attempt to create a User object with defaults for missing values
         weight = float(request.form.get("weight", 70))
         gender = request.form.get("gender", "male")
         age = int(request.form.get("age", 20))
 
         user = User(
-            name="User",  # Name can be static or from session
+            name="User",
             weight=weight,
             gender=gender,
             age=age,
         )
         session["user"] = user.__dict__
         session.modified = True
-    except (ValueError, KeyError) as e:
-        # Render template with an error message if inputs are invalid
+    except (ValueError, KeyError):
         return render_template(
             "result.html",
             error="Ungültige Eingaben. Bitte überprüfen Sie die eingegebenen Informationen.",
             drinks=[],
         )
 
-    # Retrieve selected drinks
     selected_drinks = get_combined_drinks()
 
-    # Handle the case where no drinks are selected
     if not selected_drinks:
         return render_template(
             "result.html", error="Keine Getränke ausgewählt.", drinks=[]
         )
 
-    # Calculate total alcohol and BAC
     try:
-        total_alcohol = calculate_total_alcohol(selected_drinks)
+        total_alcohol = calculate_total_alcohol_in_liters(selected_drinks)
         bac = calculate_bac(
             weight=user.weight,
             gender=user.gender,
@@ -191,7 +259,6 @@ def calculate():
             bac=bac, weight=user.weight, age=user.age
         )
     except Exception as e:
-        # Catch any unexpected errors during calculation
         print(e)
         return render_template(
             "result.html",
@@ -199,12 +266,10 @@ def calculate():
             drinks=[],
         )
 
-    # Summarize the drinks for display
     drink_summary = {
         f"{drink}": selected_drinks.count(drink) for drink in selected_drinks
     }
 
-    # Render the result page with calculated values
     return render_template(
         "result.html", time=time_to_sober, bac=bac, drinks=drink_summary
     )
@@ -215,6 +280,7 @@ def reset():
     # session.clear()
     session["user_drinks"] = []
     session["custom_drinks"] = []
+    session["history"] = []
     flash("Session reset.")
     return redirect(url_for("index"))
 
