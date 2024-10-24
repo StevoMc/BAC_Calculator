@@ -84,8 +84,7 @@ def calculate_time_to_sober(bac: float, weight: float, age: int) -> float:
 
 
 def calculate_total_alcohol_in_liters(drinks: List[Drink]) -> float:
-    result = sum(drink.alcohol_content() for drink in drinks)
-    print(result)
+    result = round(sum(drink.alcohol_content() for drink in drinks), 2)
     return result
 
 

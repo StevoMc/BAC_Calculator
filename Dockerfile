@@ -16,6 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install Gunicorn
 RUN pip install gunicorn
 
+RUN pip install gevent
+
 # Copy the current directory contents into the container at /app
 COPY . .
 
@@ -23,4 +25,4 @@ COPY . .
 EXPOSE 5000
 
 # Use Gunicorn to serve the app
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "main:app"]
+CMD ["gunicorn", "-w", "4", "gevent", "-b", "0.0.0.0:5000", "main:app"]
