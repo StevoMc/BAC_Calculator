@@ -9,8 +9,8 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Copy and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Runtime stage
 FROM python:3.9-slim
@@ -27,8 +27,8 @@ RUN adduser --disabled-password appuser
 WORKDIR /app
 
 # Copy dependencies from builder stage
-COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
+COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy the application code
 COPY . .

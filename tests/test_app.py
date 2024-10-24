@@ -32,12 +32,10 @@ def test_add_drink(client):
         0
     ]  # 'session=<value>'
 
-    print(f"Session cookie: {session_cookie}")
-
     assert (
         response.status_code == 302
     ), f"Expected status code 302, got {response.status_code} instead"
-    print(f"Successfully added drink. Session cookie: {session_cookie}")
+    print("Successfully added drink.")
 
 
 def test_use_session_cookie(client):
@@ -49,9 +47,7 @@ def test_use_session_cookie(client):
         client.set_cookie(
             key=session_cookie.split("=")[0], value=session_cookie.split("=")[1]
         )
-    print(client.get_cookie("session"))
     response = client.get("/")
-    print(response.headers)
     assert response.headers is not None
 
 

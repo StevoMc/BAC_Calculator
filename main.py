@@ -12,25 +12,28 @@ from flask_session import Session
 from models.drink import Drink
 from models.user import User
 
+app = Flask(__name__)
+
 
 # Configuration
 class Config:
     SECRET_KEY = os.urandom(24)
-    SESSION_TYPE = "filesystem"
-    SESSION_PERMANENT = False  # Set according to your needs
+    SESSION_PERMANENT = False
+    SESSION_COOKIE_NAME = "session"
 
 
-app = Flask(__name__)
 app.config.from_object(Config)
 
-# Set up the session with CacheLib
-app.config["SESSION_CACHE"] = FileSystemCache(
-    "/tmp/flask_session",
-    threshold=100,  # Maximum number of items to keep
-    default_timeout=600,  # Adjust timeout as needed
+cache = FileSystemCache(
+    cache_dir="/tmp/flask_session",
+    threshold=100,
+    default_timeout=600,
 )
 
-# Use Flask-Session with CacheLib
+# Configure Flask-Session to use CacheLib
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT'] = False
+
 Session(app)
 
 # Constants
@@ -287,6 +290,7 @@ def reset():
 @app.route("/health-check")
 def health_check():
     return "OK", 200
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
