@@ -104,6 +104,7 @@ def index():
     }
 
     all_unique_drinks = set(selected_drinks + DRINKS)
+    all_unique_drinks.sort(key=lambda x: x.volume_in_liters(), reverse=True)
 
     context = {
         "drinks": all_unique_drinks,
@@ -147,6 +148,7 @@ def remove_history_entry():
 def add_drink():
     drink = request.form.get("drink")
     all_unique_drinks = set(get_combined_drinks() + DRINKS)
+    all_unique_drinks.sort(key=lambda x: x.volume_in_liters(), reverse=True)
 
     selected_drink = next((d for d in all_unique_drinks if str(d) == drink), None)
 
