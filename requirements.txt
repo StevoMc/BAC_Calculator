@@ -1,0 +1,4 @@
+Babel==2.16.0
+cachelib==0.9.0
+Flask==3.0.3
+pytest==8.3.3
