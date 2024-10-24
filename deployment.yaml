@@ -14,12 +14,19 @@ spec:
     spec:
       containers:
         - name: bac-calculator
-          image: stevomc/bac-calculator:latest
+          image: stevomc/bac_calculator:latest
           ports:
             - containerPort: 5000
           env:
             - name: FLASK_ENV
               value: "production"
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
           livenessProbe:
             httpGet:
               path: /health-check

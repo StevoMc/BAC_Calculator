@@ -27,7 +27,7 @@ app.config.from_object(Config)
 
 # Initialize cache
 cache = FileSystemCache(
-    cache_dir="./flask_session",
+    cache_dir="/tmp/flask_session",
     threshold=250,
     default_timeout=60 * 60 * 24 * 7,
 )
