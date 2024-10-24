@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Sobering Time Result</title>
+		<link
+			rel="stylesheet"
+			href="{{ url_for('static', filename='css/styles.css') }}"
+		/>
+	</head>
+	<body>
+		<main>
+			{% if error %}
+			<div class="error-message">
+				<p>{{ error }}</p>
+			</div>
+			{% else %}
+			<div class="results">
+				<h2>
+					Berechnete BAK: <span class="highlight">{{ bac }} Promille</span>
+				</h2>
+				<p>
+					Zeit, um nüchtern zu werden:
+					<span class="highlight">{{ time }} Stunden</span>
+				</p>
+				<hr />
+				<h3>Getrunkene Getränke:</h3>
+				<div class="drink-list-container">
+					{% for drink, amount in drinks.items() %}
+					<p>{{ amount }} x {{ drink }}</p>
+					{% endfor %}
+				</div>
+				<hr />
+			</div>
+			{% endif %}
+			<button class="drink-button" onclick="window.location.href='/';">
+				Zurück
+			</button>
+		</main>
+	</body>
+</html>

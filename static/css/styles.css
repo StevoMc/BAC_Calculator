@@ -1,0 +1,226 @@
+:root {
+	/* Dark Mode Color Palette */
+	--background-color: #121212; /* Deep dark background */
+	--text-color: #e0e0e0; /* Light gray text for better readability */
+	--header-background: #1e1e1e; /* Slightly lighter for headers */
+	--footer-background: #1e1e1e; /* Match footer with header */
+	--input-border: #333333; /* Darker border for inputs */
+	--input-background: #1f1f1f; /* Input background */
+	--input-hover-background: #3c3c3c; /* Hover state for inputs */
+	--succsess-background: #4caf50; /* Green for success button */
+	--succsess-hover-background: #45a049; /* Lighter green for hover */
+	--reset-background: #e40000; /* Bright red for reset button */
+	--reset-hover-background: #ff1744; /* Lighter red for hover */
+	--scrollable-background: #1f1f1f; /* Match input background */
+	--drink-list-background: #232323; /* Slightly lighter for drink list */
+	--border-color: #444444; /* Soft gray border */
+	--shadow-color: rgba(0, 0, 0, 0.5); /* Stronger shadow for depth */
+}
+
+* {
+	box-sizing: border-box;
+	color: var(--text-color);
+	/* border: solid 1px red; */
+}
+
+body {
+	font-family: Arial, sans-serif;
+	margin: 0;
+	padding: 0;
+	min-height: 100svh;
+	max-width: 100svw;
+	overflow: auto;
+	overflow-x: hidden;
+	background-color: var(--background-color);
+
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+.container {
+	flex: 1 1;
+	flex-grow: 1;
+	flex-shrink: 0;
+	width: 100%;
+	height: 100%;
+	display: grid;
+	grid-template-rows: 50px 1fr 50px;
+	gap: 20px;
+	grid-template-areas:
+		"header"
+		"main"
+		"footer";
+	padding: 1rem;
+}
+
+@media (min-width: 768px) {
+	.container {
+		max-width: 1400px;
+		grid-template-columns: 1fr 6fr 1fr;
+		grid-template-areas:
+			"header header header"
+			"left-asside main right-asside"
+			"footer footer footer";
+	}
+}
+
+header {
+	grid-area: header;
+	font-size: 1.5rem;
+	padding: 10px;
+	text-align: center;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+main {
+	grid-area: main;
+	font-size: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	justify-content: center;
+	padding: 10px;
+}
+
+.form-container {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem; /* Add space between forms */
+	margin-bottom: 20px; /* Space before drink list */
+}
+
+footer {
+	grid-area: footer;
+	padding: 10px;
+	text-align: center;
+}
+
+input,
+select,
+button {
+	width: 100%;
+	padding: 10px;
+	margin: 4px 0;
+	border: 1px solid var(--input-border);
+	border-radius: 0.25rem;
+	box-shadow: 0 2px 10px var(--shadow-color);
+	background-color: var(--input-background);
+	color: var(--text-color);
+}
+
+.drink-button {
+	background-color: var(--succsess-background);
+	color: var(--text-color);
+	border: none;
+	cursor: pointer;
+}
+
+.drink-button:hover {
+	background-color: var(--succsess-hover-background);
+}
+
+.reset-button {
+	background-color: var(--reset-background);
+	color: var(--text-color);
+	cursor: pointer;
+	border-radius: 0.25rem;
+	box-shadow: 0 2px 10px var(--shadow-color);
+}
+
+.reset-button:hover {
+	background-color: var(--reset-hover-background);
+}
+
+.scrollable {
+	overflow: auto; /* Enables scrolling if the content exceeds the element's size */
+	max-height: 250px; /* Set a maximum height for the element */
+	max-width: 100%; /* Set a maximum width for the element */
+	border: 1px solid var(--border-color); /* Border for visual clarity */
+	padding: 10px; /* Padding inside the element */
+	box-shadow: 0 2px 5px var(--shadow-color); /* Shadow for aesthetics */
+	background-color: var(--scrollable-background); /* Background color */
+	border-radius: 5px; /* Rounded corners */
+}
+
+.drink-list-container {
+	flex-grow: 1; /* Allow drink list to take available space */
+	padding: 10px;
+	border-radius: 4px; /* Rounded corners for drink list */
+}
+
+.user-settings-form {
+	display: flex;
+	flex-direction: column; /* Use flex-direction for clarity */
+	gap: 10px;
+}
+
+@media (min-width: 768px) {
+	.user-settings-form {
+		flex-direction: row; /* Only set flex-direction */
+	}
+}
+
+.user-settings-form-item {
+	flex: 1; /* Ensures that items share available space equally */
+}
+
+.container-row {
+	margin-top: 10px;
+	display: flex;
+	width: 100%;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	gap: 10px;
+}
+
+.drink-options {
+	display: flex;
+	flex-wrap: wrap; /* Allows the divs to wrap in a responsive way */
+	gap: 15px; /* Space between drink options */
+	justify-content: center; /* Center content on smaller screens */
+}
+
+.drink-option {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	align-content: stretch;
+	justify-content: stretch;
+	justify-items: stretch;
+	padding: 10px;
+	background: #1d1d2c;
+	border: 1px solid #ccc; /* Border for each option */
+	border-radius: 8px;
+	text-align: center;
+	cursor: pointer; /* Indicates it's clickable */
+	transition: box-shadow 0.3s ease;
+	width: 150px;
+	/* height: 100px; */
+	flex-grow: 1;
+}
+
+@media screen and (min-width: 768px) {
+	.drink-option {
+		width: 150px;
+	}
+	
+}
+
+.drink-option p:not(:first-child) {
+	font-size: 0.8rem;
+}
+
+.drink-option:hover {
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Add a shadow on hover */
+}
+
+.drink-option img {
+	color: rgb(0, 0, 0); /* All SVGs will be white */
+	filter: invert()
+}
+

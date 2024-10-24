@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Promillerechner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <style>
+        /* Spinner styles */
+        .spinner {
+            display: none; /* Hidden by default */
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border: 16px solid #f3f3f3; /* Light grey */
+            border-top: 16px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <script>
+        function selectDrink(drink) {
+            document.getElementById("selected-drink").value = drink;
+            document.getElementById("drink-form").submit();
+        }
+
+        function showLoading() {
+            document.getElementById("main-content").style.display = 'none'; // Hide the main content
+            document.getElementById("loading-spinner").style.display = 'block'; // Show the spinner
+        }
+
+        function confirmReset() {
+            const userConfirmed = confirm('Möchten Sie wirklich alle Getränke zurücksetzen?');
+            if (userConfirmed) {
+                showLoading(); // Assuming this is a predefined function that shows a loading animation or message
+            }
+            return userConfirmed; // Return true to proceed with the form submission, or false to cancel it
+        }
+
+        function calculate(drinks) {
+            console.log(drinks);
+
+            if (drinks === '{}') {
+                alert('Bitte wählen Sie mindestens ein Getränk aus.');
+                return false;
+            }
+         }
+
+        </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Promillerechner</h1>
+        </header>
+        <main id="main-content">
+            <div class="form-container">
+                <section id="bac">
+                    <!-- BAC Calculation Form -->
+                    <form action="/calculate" method="post" onsubmit="return calculate('{{ drink_summary }}')">
+                        <fieldset class="user-settings-form">
+                            <legend>BAC Berechnung</legend>
+
+                            <div class="user-settings-form-item">
+                                <label for="age">Alter</label>
+                                <input type="number" name="age" id="age" min="0" max="150" step="1" placeholder="z.B. 20" value="{{ user.age if user else '' }}" />
+                            </div>
+
+                            <div class="user-settings-form-item">
+                                <label for="weight">Gewicht (kg)</label>
+                                <input type="number" name="weight" id="weight" min="1" max="500" step="0.1" placeholder="z.B. 70.5" value="{{ user.weight if user else '' }}" />
+                            </div>
+
+                            <div class="user-settings-form-item">
+                                <label for="gender">Geschlecht</label>
+                                <select name="gender" id="gender" required>
+                                    <option value="male" {% if user and user.gender == 'male' %}selected{% endif %}>Männlich</option>
+                                    <option value="female" {% if user and user.gender == 'female' %}selected{% endif %}>Weiblich</option>
+                                </select>
+                            </div>
+                        </fieldset>
+
+                        <button class="drink-button" type="submit">BAK berechnen</button>
+                    </form>
+                </section>
+            </div>
+
+            <!-- Custom Drink Form -->
+            <div class="form-container">
+              <section id="custom-drink">
+                  <form action="/add_custom_drink" method="post" onsubmit="showLoading()">
+                      <fieldset class="user-settings-form">
+                          <legend>Benutzerdefiniertes Getränk</legend>
+
+                          <div class="user-settings-form-item">
+                              <label for="custom-drink-name">Name</label>
+                              <input type="text" name="custom-drink-name" id="custom-drink-name" required />
+                          </div>
+
+                          <div class="user-settings-form-item">
+                              <label for="custom-drink-alcohol">Alkoholgehalt (%)</label>
+                              <input type="number" name="custom-drink-alcohol" id="custom-drink-alcohol" required min="0" max="100" step="0.1" />
+                          </div>
+
+                          <div class="user-settings-form-item">
+                              <label for="custom-drink-volume">Volumen (ml)</label>
+                              <input type="number" name="custom-drink-volume" id="custom-drink-volume" required min="0" max="5000" step="1" />
+                          </div>
+                      </fieldset>
+
+                      <button class="drink-button" type="submit">Benutzerdefiniertes Getränk hinzufügen</button>
+                  </form>
+              </section>
+          </div>
+
+            <!-- Drink Selection Buttons -->
+            <section id="drinks">
+                <form action="/add_drink" method="post" class="container-row" id="drink-form" onsubmit="showLoading()">
+                    <div class="drink-options">
+                        {% for drink in drinks %}
+                        <div class="drink-option" onclick="selectDrink('{{ drink.__str__() }}')">
+                            <div>
+                                <img src="{{ url_for('static', filename='images/' + drink.name + '.svg') }}" alt="{{ drink.name }}" width="50" height="50" />
+                            </div>
+                            <div>
+                                <p>{{ drink.name }}</p>
+                                <p style="font-size: x-small;">{{ drink.volume }} {{ drink.unit }} {{ drink.alcohol }} %</p>
+                                <p style="font-size: large;">{{ drink_summary.get(drink.__str__(), "") }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" name="drink" id="selected-drink" />
+                </form>
+            </section>
+
+            <section id="selected-drink">
+                <div class="drink-list-container">
+                    <h2>Ausgewählte Getränke:</h2>
+                    <div class="drink-list-container">
+                        {% for drink, amount in drink_summary.items() %}
+                        <p>{{ amount }} x {{ drink }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+
+            <form action="/reset" method="get" onsubmit="return confirmReset()">
+                <button class="reset-button" type="submit">Getränke zurücksetzen</button>
+            </form>
+            
+        </main>
+
+        <!-- Loading Spinner -->
+        <div id="loading-spinner" class="spinner"></div>
+
+        <footer>
+            <p>&copy; {{ current_year }} Promillerechner</p>
+        </footer>
+    </div>
+</body>
+</html>
