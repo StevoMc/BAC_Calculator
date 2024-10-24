@@ -164,17 +164,23 @@ We welcome contributions! Follow these steps to contribute:
 
 1. Fork the repository.
 2. Create a new feature branch.
+
    ```bash
    git checkout -b feature/my-new-feature
    ```
+
 3. Commit your changes.
+
    ```bash
    git commit -am 'Add new feature'
    ```
+
 4. Push to the branch.
+
    ```bash
    git push origin feature/my-new-feature
    ```
+
 5. Open a Pull Request.
 
 ### Coding Standards
@@ -186,7 +192,7 @@ We welcome contributions! Follow these steps to contribute:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-### Explanation:
+### Explanation
 
 - **Features**: Lists the core functionality of your project.
 - **Technologies**: Specifies the tech stack used.
