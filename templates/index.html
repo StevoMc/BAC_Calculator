@@ -30,7 +30,6 @@
                         <div class="user-settings-form-item">
                             <label for="gender">Geschlecht</label>
                             <select name="gender" id="gender" required>
-                                <option value="" disabled selected hidden>Bitte wählen</option>
                                 <option value="male" {% if user and user.gender == 'male' %}selected{% endif %}>Männlich</option>
                                 <option value="female" {% if user and user.gender == 'female' %}selected{% endif %}>Weiblich</option>
                             </select>

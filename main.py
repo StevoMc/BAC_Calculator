@@ -98,21 +98,30 @@ def get_combined_drinks() -> List[Drink]:
 # Routes
 @app.route("/")
 def index():
+    # Get combined selected drinks
     selected_drinks = get_combined_drinks()
+
+    # Generate a summary of selected drinks
     drink_summary = {
         f"{drink}": selected_drinks.count(drink) for drink in selected_drinks
     }
 
-    all_unique_drinks = set(selected_drinks + DRINKS)
-    all_unique_drinks.sort(key=lambda x: x.volume_in_liters(), reverse=True)
+    # Combine selected drinks with predefined DRINKS
+    all_unique_drinks = set(selected_drinks).union(DRINKS)
 
+    # Sort the drinks by volume in liters in descending order
+    drinks = sorted(all_unique_drinks, key=lambda x: x.volume_in_liters(), reverse=True)
+
+    # Create context for rendering the template
     context = {
-        "drinks": all_unique_drinks,
+        "drinks": drinks,
         "drink_summary": drink_summary,
         "selected_drinks": selected_drinks,
         "user": session.get("user"),
         "current_year": datetime.now().year,
     }
+
+    # Render the template with the context
     return render_template("index.html", **context)
 
 
@@ -148,7 +157,6 @@ def remove_history_entry():
 def add_drink():
     drink = request.form.get("drink")
     all_unique_drinks = set(get_combined_drinks() + DRINKS)
-    all_unique_drinks.sort(key=lambda x: x.volume_in_liters(), reverse=True)
 
     selected_drink = next((d for d in all_unique_drinks if str(d) == drink), None)
 
@@ -175,7 +183,8 @@ def add_drink():
 @app.route("/remove_drink", methods=["POST"])
 def remove_drink():
     drink = request.form.get("drink")
-    selected_drink = next((d for d in DRINKS if str(d) == drink), None)
+    all_unique_drinks = set(get_combined_drinks() + DRINKS)
+    selected_drink = next((d for d in all_unique_drinks if str(d) == drink), None)
 
     if not selected_drink:
         flash("Drink not found.")
