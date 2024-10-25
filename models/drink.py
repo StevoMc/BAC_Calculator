@@ -8,6 +8,8 @@ MIN_VOLUME: float = 0.0
 MAX_VOLUME: float = 50.0
 VALID_UNITS: List[str] = ["L", "ml", "cl"]
 
+ETHANOL_DENSITY = 0.789
+
 
 # Function to calculate volume in liters
 def calculate_volume_in_liters(volume: float, unit: str) -> float:
@@ -71,6 +73,12 @@ class Drink:
     def alcohol_content(self) -> float:
         """Calculates the alcohol content in liters."""
         return round(self.volume_in_liters() * (self.alcohol / 100), 2)
+
+    def alcohol_grams(self) -> float:
+        """Calculates the alcohol content in grams."""
+        return round(
+            self.volume_in_liters() * 1000 * (self.alcohol / 100) * ETHANOL_DENSITY, 2
+        )
 
     def __str__(self) -> str:
         """Provides a user-friendly string representation of the drink."""

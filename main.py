@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import logging
 import os
 from datetime import datetime
 from typing import List, Literal
@@ -32,6 +33,12 @@ cache = FileSystemCache(
     default_timeout=60 * 60 * 24 * 7,
 )
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format='"%(asctime)s" "%(levelname)s" - "%(message)s"'
+)
+logger = logging.getLogger(__name__)
+
 # Initialize Flask-Session
 Session(app)
 
@@ -56,18 +63,18 @@ DRINKS = [
 
 # Helper functions
 def calculate_age_factor(age: int) -> float:
-    return 1 - ((age - 20) * 0.001) if age > 20 else 1
+    return round(1 - ((age - 20) * 0.001) if age > 20 else 1, 2)
 
 
 def calculate_reduction_factor(gender: Literal["male", "female"], age: int) -> float:
-    return REDUCTION_FACTOR.get(gender, 1) * calculate_age_factor(age)
+    return REDUCTION_FACTOR.get(gender, 0.7) * calculate_age_factor(age)
 
 
 def calculate_bac(
     weight: float, gender: Literal["male", "female"], age: int, total_alcohol: float
 ) -> float:
     reduction_factor = calculate_reduction_factor(gender, age)
-    absorbed_alcohol = total_alcohol * 1000 * ALCOHOL_ABSORPTION_RATE
+    absorbed_alcohol = round(total_alcohol * ALCOHOL_ABSORPTION_RATE, 2)
     return round(absorbed_alcohol / (weight * reduction_factor), 3)
 
 
@@ -75,16 +82,21 @@ def calculate_adjusted_metabolism_rate(age: int, weight: float) -> float:
     metabolism_rate = ALCOHOL_METABOLISM_RATE * calculate_age_factor(age)
     metabolism_rate = max(0.10, metabolism_rate)
     weight_factor = weight / 70
-    return metabolism_rate * weight_factor
+    return round(metabolism_rate * weight_factor, 2)
 
 
 def calculate_time_to_sober(bac: float, weight: float, age: int) -> float:
     final_metabolism_rate = calculate_adjusted_metabolism_rate(age, weight)
-    return round(bac / final_metabolism_rate, 2)
+    time_to_sober = round(bac / final_metabolism_rate, 2)
+    logger.info(f"With values age={age} weigth={weight} bac={bac}")
+    logger.info(f"Final metabolism rate: {final_metabolism_rate}")
+    logger.info(f"Time to sober: {time_to_sober} hours")
+
+    return time_to_sober
 
 
-def calculate_total_alcohol_in_liters(drinks: List[Drink]) -> float:
-    return round(sum(drink.alcohol_content() for drink in drinks), 2)
+def calculate_total_alcohol_in_grams(drinks: List[Drink]) -> float:
+    return round(sum(drink.alcohol_grams() for drink in drinks), 2)
 
 
 def get_combined_drinks() -> List[Drink]:
@@ -256,7 +268,7 @@ def calculate():
         return render_template("result.html", error="No drinks selected.", drinks=[])
 
     try:
-        total_alcohol = calculate_total_alcohol_in_liters(selected_drinks)
+        total_alcohol = calculate_total_alcohol_in_grams(selected_drinks)
         bac = calculate_bac(
             weight=user.weight,
             gender=user.gender,
@@ -267,7 +279,7 @@ def calculate():
             bac=bac, weight=user.weight, age=user.age
         )
     except Exception as e:
-        print(e)
+        logger.error(e)
         return render_template(
             "result.html", error="Calculation error. Please try again.", drinks=[]
         )
