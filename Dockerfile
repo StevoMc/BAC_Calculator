@@ -16,6 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt && \
 # Runtime stage
 FROM python:3.10-slim
 
+RUN apt-get update && apt-get install -y curl
+
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
   PYTHONUNBUFFERED=1 \
@@ -28,7 +30,8 @@ RUN adduser --disabled-password appuser
 WORKDIR /app
 
 # Create the flask_session directory and set permissions
-RUN mkdir -p /app/flask_session && chown -R appuser:appuser /app/flask_session && chmod -R 600 /tmp/flask_session
+RUN mkdir -p /tmp/flask_session && chown -R appuser:appuser /tmp/flask_session
+RUN mkdir -p /app/flask_session && chown -R appuser:appuser /app/flask_session
 
 # Copy dependencies from builder stage
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages

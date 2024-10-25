@@ -44,6 +44,8 @@ jobs:
       run: |
         export PYTHONPATH=$PYTHONPATH:.  # Add current directory to PYTHONPATH
         pytest
+        coverage run -m pytest
+        coverage report -m
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
