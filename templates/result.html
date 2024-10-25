@@ -81,12 +81,8 @@
 
 				for (let t = 0; t <= soberingTime; t += 0.1) {
 					const currentBac = (initialBac - decayRatePerHour * t).toFixed(2);
-					timeLabels.push(t.toFixed(1));
-					if (currentBac < 0) {
-						bacData.push(0);
-						break;
-					}
 
+					timeLabels.push(t.toFixed(1));
 					bacData.push(currentBac);
 
 					// Check when BAC drops below 0.5 and record that time
