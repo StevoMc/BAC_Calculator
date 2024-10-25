@@ -11,21 +11,24 @@ WORKDIR /app
 # Copy and install dependencies
 COPY requirements.txt ./ 
 RUN pip install --no-cache-dir -r requirements.txt && \
-    ls /usr/local/lib/python3.10/site-packages
+  ls /usr/local/lib/python3.10/site-packages
 
 # Runtime stage
 FROM python:3.10-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    FLASK_ENV=production
+  PYTHONUNBUFFERED=1 \
+  FLASK_ENV=production
 
 # Create a non-root user
 RUN adduser --disabled-password appuser
 
 # Set the working directory
 WORKDIR /app
+
+# Create the flask_session directory and set permissions
+RUN mkdir -p /app/flask_session && chown -R appuser:appuser /app/flask_session && chmod -R 600 /tmp/flask_session
 
 # Copy dependencies from builder stage
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
